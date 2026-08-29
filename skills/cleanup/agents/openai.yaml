@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sweep"
+  short_description: "Audit first; clean exact approved targets"
+  default_prompt: "Use $sweep:cleanup to audit my Mac storage before proposing any cleanup."
