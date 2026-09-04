@@ -91,7 +91,7 @@ plist_value() {
 }
 
 heading "Disk"
-df -h / 2>/dev/null || warn "Unable to read filesystem usage."
+df -h / /System/Volumes/Data 2>/dev/null || warn "Unable to read filesystem usage."
 
 heading "Largest user storage"
 report_path "User caches" "${user_library}/Caches"
@@ -99,6 +99,8 @@ report_path "Application Support" "${user_library}/Application Support"
 report_path "App containers" "${user_library}/Containers"
 report_path "Group containers" "${user_library}/Group Containers"
 report_path "Developer data" "${user_library}/Developer"
+report_path "User model and package caches" "${user_home}/.cache"
+report_path "npm storage" "${user_home}/.npm"
 report_path "Codex data" "${user_home}/.codex"
 report_path "Codex task history (protected)" "${user_home}/.codex/sessions"
 report_path "macOS temporary data" "/private/var/folders"
@@ -109,9 +111,11 @@ report_path "Archives (protected by default)" "${user_library}/Developer/Xcode/A
 report_path "XcodeBuildMCP workspaces" "${user_library}/Developer/XcodeBuildMCP/workspaces"
 report_path "Simulator devices" "${user_library}/Developer/CoreSimulator/Devices"
 report_path "CoreSimulator caches" "/Library/Developer/CoreSimulator/Caches"
-report_path "Installed simulator runtimes (protected)" "/Library/Developer/CoreSimulator/Volumes"
+report_path "Installed simulator runtime volumes (never direct-delete)" "/Library/Developer/CoreSimulator/Volumes"
+report_path "CoreDevice installation binary deltas" "${user_library}/Developer/CoreDevice/Caches/AppInstallationBinaryDeltas"
+report_path "Xcode managed Developer Documentation" "${user_library}/Developer/Xcode/DocumentationCache"
 print -r -- "\n### Active developer processes"
-process_output="$(pgrep -ifl 'Xcode|Simulator|CoreSimulator|xcodebuild|XcodeBuildMCP|xctest|testmanagerd|XCTRunner' 2>&1)"
+process_output="$(pgrep -ifl 'Xcode|Simulator|CoreSimulator|CoreDevice|xcodebuild|XcodeBuildMCP|xctest|testmanagerd|XCTRunner' 2>&1)"
 process_status=$?
 if (( process_status == 0 )); then
   while IFS= read -r process_line; do
@@ -125,6 +129,8 @@ fi
 if command -v xcrun >/dev/null 2>&1; then
   print -r -- "\n### Simulator device status"
   xcrun simctl list devices 2>/dev/null || warn "simctl device status is unavailable."
+  print -r -- "\n### Installed simulator runtime status"
+  xcrun simctl runtime list 2>/dev/null || warn "simctl runtime status is unavailable."
 else
   warn "xcrun is unavailable; simulator state was not inspected."
 fi
@@ -175,7 +181,34 @@ report_path "Codex browser code cache" "${user_library}/Application Support/Code
 report_path "Codex temporary task data (conditional)" "${user_home}/.codex/.tmp"
 report_path "Xcode DerivedData" "${user_library}/Developer/Xcode/DerivedData"
 report_path "CoreSimulator dyld cache" "/Library/Developer/CoreSimulator/Caches"
+report_path "npm package cache" "${user_home}/.npm/_cacache"
+report_path "npm transient executors (may be active)" "${user_home}/.npm/_npx"
+report_path "uv package cache" "${user_home}/.cache/uv"
+report_path "Hugging Face model cache" "${user_home}/.cache/huggingface"
 report_path "AdGuard logs" "${user_library}/Group Containers/TC3Q7MAJXF.com.adguard.mac/Library/Logs"
+
+heading "Photos and cloud storage"
+photos_library="${user_home}/Pictures/Photos Library.photoslibrary"
+report_path "Photos library total (protected package)" "$photos_library"
+report_path "Photos originals (nested; do not add to total)" "${photos_library}/originals"
+report_path "Photos resources (nested; do not add to total)" "${photos_library}/resources"
+report_path "Photos scopes (nested; do not add to total)" "${photos_library}/scopes"
+report_path "iCloud Drive local data (protected until exact files are reviewed)" "${user_library}/Mobile Documents/com~apple~CloudDocs"
+print -r -- "- Verify iCloud sync and Optimize Mac Storage in the Photos UI; optimization is gradual and pressure-driven."
+print -r -- "- Use Remove Download for a synced iCloud Drive item; Delete can remove the cloud object."
+
+print -r -- "\n### Related active processes"
+cloud_process_output="$(pgrep -ifl 'photolibraryd|photoanalysisd|cloudphotosd|bird|cloudd|npm|uv|MacWhisper|Telegram|Aside|Spotify' 2>&1)"
+cloud_process_status=$?
+if (( cloud_process_status == 0 )); then
+  while IFS= read -r process_line; do
+    print -r -- "- process: $(safe_field "$process_line")"
+  done <<< "$cloud_process_output"
+elif (( cloud_process_status == 1 )); then
+  print -r -- "- no matching processes visible"
+else
+  warn "Photos, cloud, or package process state is unavailable (pgrep status ${cloud_process_status})."
+fi
 
 heading "Snapshots"
 if command -v tmutil >/dev/null 2>&1; then
@@ -188,5 +221,7 @@ heading "Warnings"
 print -r -- "- Audit only: no files or processes were changed."
 print -r -- "- Protected: ~/.codex/sessions is task history, not cache."
 print -r -- "- Protected: /Library/Developer/CoreSimulator/Volumes contains installed runtimes."
+print -r -- "- Managed: Xcode AssetsV2 must not be direct-deleted."
+print -r -- "- Photos optimization is pressure-driven and does not remove the local library database or thumbnails."
 print -r -- "- Cache sizes can regenerate after applications or simulators restart."
 print -r -- "- Permission errors are partial results, not proof that a path is absent."

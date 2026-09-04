@@ -1,4 +1,4 @@
 interface:
   display_name: "Sweep"
-  short_description: "Audit first; clean exact approved targets"
-  default_prompt: "Use $sweep:cleanup to audit my Mac storage before proposing any cleanup."
+  short_description: "Audit first; reclaim durable space safely"
+  default_prompt: "Use $sweep:cleanup to audit my Mac storage, separate durable recovery from temporary cache relief, and propose exact cleanup targets."

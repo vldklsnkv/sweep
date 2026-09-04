@@ -1,7 +1,7 @@
 {
   "name": "sweep",
-  "version": "0.1.0",
-  "description": "Audit and safely clean macOS storage with explicit approval boundaries",
+  "version": "0.2.0",
+  "description": "Audit macOS storage and reclaim durable space with explicit safety gates",
   "author": {
     "name": "Vlad Kalashnikov"
   },
@@ -16,8 +16,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Sweep",
-    "shortDescription": "Audit first; clean only approved targets.",
-    "longDescription": "Sweep audits macOS storage, classifies Safe, Conditional, and Protected data, then cleans only exact targets approved in a separate step.",
+    "shortDescription": "Audit first; reclaim durable space safely.",
+    "longDescription": "Sweep audits macOS storage, separates durable recovery from temporary cache relief, and cleans only exact targets approved after project, simulator, Photos, and active-process safety checks.",
     "developerName": "Vlad Kalashnikov",
     "category": "Productivity",
     "capabilities": [
@@ -28,7 +28,8 @@
     "logo": "./assets/icon.png",
     "defaultPrompt": [
       "Use $sweep:cleanup to audit my Mac storage safely before proposing any cleanup.",
-      "Use $sweep:cleanup to inspect Xcode and simulator storage without deleting anything."
+      "Use $sweep:cleanup to inspect Xcode and simulator storage without deleting anything.",
+      "Use $sweep:cleanup to make a safe plan for reaching a specific free-space target."
     ]
   }
 }

@@ -10,10 +10,14 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills" / "cleanup"
 AUDIT_SCRIPT = SKILL / "scripts" / "audit_macos_storage.sh"
 CLASSIFICATION = SKILL / "references" / "classification.md"
+ADVANCED_WORKFLOWS = SKILL / "references" / "advanced-workflows.md"
+
+
 class SweepContractTests(unittest.TestCase):
     def test_manifest_contract(self):
         manifest = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text())
         self.assertEqual(manifest["name"], "sweep")
+        self.assertRegex(manifest["version"], r"^0\.2\.0(?:\+codex\.\d{14})?$")
         self.assertRegex(
             manifest["version"], r"^\d+\.\d+\.\d+(?:\+[0-9A-Za-z.-]+)?$"
         )
@@ -30,6 +34,7 @@ class SweepContractTests(unittest.TestCase):
     def test_safety_resources_are_present_and_hardened(self):
         script = AUDIT_SCRIPT.read_text()
         classification = CLASSIFICATION.read_text()
+        workflows = ADVANCED_WORKFLOWS.read_text()
         self.assertIn("printf '%q'", script)
         self.assertIn("process_status", script)
         for process in ("xctest", "testmanagerd", "XCTRunner"):
@@ -37,6 +42,23 @@ class SweepContractTests(unittest.TestCase):
         self.assertNotIn("simctl delete unavailable", classification)
         self.assertIn("exact unavailable UDIDs", classification)
         self.assertIn("fresh approval", classification)
+        self.assertIn("Durable", classification)
+        self.assertIn("Remove Download", classification)
+        self.assertIn("AssetsV2", classification)
+        self.assertIn("idempotent, repeatable smoke test", workflows)
+        self.assertIn("freeze, capture, seal", workflows)
+
+        for evidence in (
+            "/System/Volumes/Data",
+            "simctl runtime list",
+            "Photos Library.photoslibrary",
+            ".npm/_cacache",
+            ".npm/_npx",
+            ".cache/uv",
+            "AppInstallationBinaryDeltas",
+            "AssetsV2",
+        ):
+            self.assertIn(evidence, script)
 
     def test_audit_script_is_executable_and_has_no_mutating_commands(self):
         self.assertTrue(os.access(AUDIT_SCRIPT, os.X_OK))
@@ -70,6 +92,9 @@ class SweepContractTests(unittest.TestCase):
         self.assertIn("exact absolute paths", skill)
         self.assertIn("new, direct user message", skill)
         self.assertIn("tool or script output", skill)
+        self.assertIn("advanced-workflows.md", skill)
+        self.assertIn("Durable and Temporary", skill)
+        self.assertIn("Do not reuse old authorization", skill)
         for protected in (
             "~/.codex/sessions",
             "~/.codex/memories",
